@@ -39,21 +39,31 @@ class KafkaProducer:
     def _initProducer(self):
         if "" != self.security :
             if "ssl+sasl" == self.security:
-                _LOGGER.debug("Initializing Kafka producer with ssl+sasl security profile")
+                _LOGGER.debug("Initializing Kafka producer with SSL+SASL security profile")
 
                 self.producer = AIOKafkaProducer(
                     bootstrap_servers   = f"{self.host}:{self.port}",
-                    security_protocol   = "SASL_SSL",
+                    security_protocol   = "SSL",
                     ssl_context         = self.sslContext,
                     sasl_mechanism      = self.saslContext["mechanism"],
                     sasl_plain_username = self.saslContext["plain_username"],
                     sasl_plain_password = self.saslContext["plain_password"]
                 )
-            if "ssl" == self.security:
-                _LOGGER.debug("Initializing Kafka producer with ssl security profile")
+            elif "ssl" == self.security:
+                _LOGGER.debug("Initializing Kafka producer with SSL security profile")
                 self.producer = AIOKafkaProducer(
                     bootstrap_servers   = f"{self.host}:{self.port}",
+                    security_protocol   = "SSL",
                     ssl_context         = self.sslContext
+                )
+            elif "sasl" == self.security:
+                _LOGGER.debug("Initializing Kafka producer with SASL security profile")
+                self.producer = AIOKafkaProducer(
+                    bootstrap_servers   = f"{self.host}:{self.port}",
+                    security_protocol   = "PLAINTEXT",
+                    sasl_mechanism      = self.saslContext["mechanism"],
+                    sasl_plain_username = self.saslContext["plain_username"],
+                    sasl_plain_password = self.saslContext["plain_password"]
                 )
         else:
             # start a producer without security context
@@ -124,7 +134,7 @@ class KafkaProducer:
 
             payload = ""
             if isinstance(msg, list) or isinstance(msg, dict) :
-                msg['timestamp'] = current_timestamp.strftime("%Y-%m-%d %H:%M:%S %Z")
+                msg['timestamp'] = current_timestamp.isoformat("T", "seconds")
                 jsonData = dumps(msg)
                 payload = jsonData.encode()
             else:

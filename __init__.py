@@ -1,6 +1,6 @@
 import logging
 from json import dumps, loads
-from aiokafka.helpers import create_ssl_context
+import ssl
 
 #own class import
 from .kafkaManager import (
@@ -46,21 +46,20 @@ async def async_setup(hass, config):
     consumersBucket = []
 
     #### SASL CONFIGURATION
-    saslConfiguration = conf[SASL_CONFIGKEY]
-    if None != saslConfiguration:
+    if SASL_CONFIGKEY in conf:
+        saslConfiguration = conf[SASL_CONFIGKEY]
         _LOGGER.info("Detected SALS Kafka configuration mode")
         _LOGGER.debug("SASL Kafka configuration: %s", saslConfiguration)
         saslContext = create_sasl_config(saslConfiguration)
-        _LOGGER.debug("SALS configuration params: %s", saslContext)
+        _LOGGER.debug("SASL configuration params: %s", saslContext)
 
 
     #### SSL CONFIGURATION
-    sslConfiguration = conf[SSL_CONFIGKEY]
-    if None != sslConfiguration:
+    if SSL_CONFIGKEY in  conf:
+        sslConfiguration = conf[SSL_CONFIGKEY]
         _LOGGER.info("Detected SSL Kafka configuration mode")
         _LOGGER.debug("SSL Kafka configuration: %s", sslConfiguration)
 
-        _LOGGER.info("creating secure ssl context..")
         try:
             certPath = sslConfiguration[SSL_CERTPATH_CONFIGKEY] + "/"
             caFile = certPath + sslConfiguration[SSL_CAFILE_CONFIGKEY]
@@ -74,16 +73,18 @@ async def async_setup(hass, config):
             _LOGGER.debug("SSL configuration param KEYFILE: %s", certKeyFile)
             _LOGGER.debug("SSL configuration param PASSWORD: %s", passwordCerts)
 
-            sslContext = create_ssl_context(
-                cafile=caFile,  # CA used to sign certificate.
-                capath=certPath, # `CARoot` of JKS store container
-                certfile=certSignedFile,  # Signed certificate
-                keyfile=certKeyFile,
-                password=passwordCerts
-            )
 
-            _LOGGER.info("ssl context created successfully")
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=caFile, capath=None, cadata=None)
+            # context.verify_mode = ssl.CERT_REQUIRED
+            context.check_hostname = False
+            context.load_cert_chain(certSignedFile, certKeyFile, passwordCerts)
 
+            # context = create_default_context(Purpose.SERVER_AUTH, cafile=caFile)
+            # context.check_hostname = False
+            # context.load_cert_chain(certSignedFile, certKeyFile, passwordCerts)
+
+            sslContext = context
         except Exception as e:
             _LOGGER.error("ERROR CREATING SECURE CONTEXT!")
             _LOGGER.error(e)

@@ -38,35 +38,53 @@ class KafkaConsumer:
 
 
     def _initConsumer(self):
-        if "" != self.security :
-            if "ssl+sasl" == self.security:
-                _LOGGER.debug("Initializing Kafka consumer with ssl+sasl security profile")
+
+        try:
+            if "" != self.security :
+                if "ssl+sasl" == self.security:
+                    _LOGGER.debug("Initializing Kafka consumer with ssl+sasl security profile")
+                    self.consumer = AIOKafkaConsumer(
+                        self.topic,
+                        bootstrap_servers   = f"{self.host}:{self.port}",
+                        group_id            = self.consumerGroup,
+                        security_protocol   = "SSL",
+                        ssl_context         = self.sslContext,
+                        sasl_mechanism      = self.saslContext["mechanism"],
+                        sasl_plain_username = self.saslContext["plain_username"],
+                        sasl_plain_password = self.saslContext["plain_password"],
+                    )
+                elif "ssl" == self.security:
+                    _LOGGER.debug("Initializing Kafka consumer with ssl security profile")
+                    self.consumer = AIOKafkaConsumer(
+                        self.topic,
+                        bootstrap_servers   = f"{self.host}:{self.port}",
+                        group_id            = self.consumerGroup,
+                        ssl_context         = self.sslContext,
+                        security_protocol   = "SSL",
+                    )
+                elif "sasl" == self.security:
+                    _LOGGER.debug("Initializing Kafka consumer with SASL security profile")
+                    self.producer = AIOKafkaConsumer(
+                        bootstrap_servers   = f"{self.host}:{self.port}",
+                        group_id            = self.consumerGroup,
+                        security_protocol   = "PLAINTEXT",
+                        sasl_mechanism      = self.saslContext["mechanism"],
+                        sasl_plain_username = self.saslContext["plain_username"],
+                        sasl_plain_password = self.saslContext["plain_password"]
+                    )
+            else:
+                # start a consumer without security context
+                _LOGGER.debug("Initializing Kafka consumer without security profile")
                 self.consumer = AIOKafkaConsumer(
                     self.topic,
                     bootstrap_servers   = f"{self.host}:{self.port}",
-                    group_id            = self.consumerGroup,
-                    security_protocol   = "SASL_SSL",
-                    ssl_context         = self.sslContext,
-                    sasl_mechanism      = self.saslContext["mechanism"],
-                    sasl_plain_username = self.saslContext["plain_username"],
-                    sasl_plain_password = self.saslContext["plain_password"],
+                    group_id            = self.consumerGroup
                 )
-            if "ssl" == self.security:
-                _LOGGER.debug("Initializing Kafka consumer with ssl security profile")
-                self.consumer = AIOKafkaConsumer(
-                    self.topic,
-                    bootstrap_servers   = f"{self.host}:{self.port}",
-                    group_id            = self.consumerGroup,
-                    ssl_context         = self.sslContext
-                )
-        else:
-            # start a consumer without security context
-            _LOGGER.debug("Initializing Kafka consumer without security profile")
-            self.consumer = AIOKafkaConsumer(
-                self.topic,
-                bootstrap_servers   = f"{self.host}:{self.port}",
-                group_id            = self.consumerGroup
-            )
+
+        except Exception as e:
+            _LOGGER.error(e)
+            _LOGGER.error("KAFKA CONSUMER NOT INITIALIZED!! BROKER= "+self.host+":"+self.port+" TOPIC= "+self.topic)
+
 
         if None == self.consumer:
             raise Exception("KAFKA CONSUMER NOT INITIALIZED!! BROKER= "+self.host+":"+self.port+" TOPIC= "+self.topic)

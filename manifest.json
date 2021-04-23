@@ -1,6 +1,6 @@
 {
     "domain": "hakafka",
-    "version": "20210323",
+    "version": "20210423",
     "name": "Full Kafka integration for HASSIO",
     "documentation": "http://todo",
     "codeowners": ["@mfinotti"]
