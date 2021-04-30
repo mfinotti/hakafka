@@ -7,6 +7,9 @@ from aiokafka import AIOKafkaProducer
 #logger initlialization
 _LOGGER = logging.getLogger(__name__)
 
+def serializer(value):
+    return json.dumps(value).encode()
+
 class KafkaProducer:
 
     producer = None
@@ -34,8 +37,6 @@ class KafkaProducer:
 
         self._initProducer()
 
-
-
     def _initProducer(self):
         if "" != self.security :
             if "ssl+sasl" == self.security:
@@ -43,6 +44,10 @@ class KafkaProducer:
 
                 self.producer = AIOKafkaProducer(
                     bootstrap_servers   = f"{self.host}:{self.port}",
+                    compression_type    = "gzip",
+                    linger_ms           = 1000,
+                    max_batch_size      = 32768,
+                    value_serializer    = serializer,
                     security_protocol   = "SSL",
                     ssl_context         = self.sslContext,
                     sasl_mechanism      = self.saslContext["mechanism"],
@@ -53,6 +58,10 @@ class KafkaProducer:
                 _LOGGER.debug("Initializing Kafka producer with SSL security profile")
                 self.producer = AIOKafkaProducer(
                     bootstrap_servers   = f"{self.host}:{self.port}",
+                    compression_type    = "gzip",
+                    linger_ms           = 1000,
+                    max_batch_size      = 32768,
+                    # value_serializer    = serializer,
                     security_protocol   = "SSL",
                     ssl_context         = self.sslContext
                 )
@@ -60,6 +69,10 @@ class KafkaProducer:
                 _LOGGER.debug("Initializing Kafka producer with SASL security profile")
                 self.producer = AIOKafkaProducer(
                     bootstrap_servers   = f"{self.host}:{self.port}",
+                    compression_type    = "gzip",
+                    linger_ms           = 1000,
+                    max_batch_size      = 32768,
+                    value_serializer    = serializer,
                     security_protocol   = "PLAINTEXT",
                     sasl_mechanism      = self.saslContext["mechanism"],
                     sasl_plain_username = self.saslContext["plain_username"],
@@ -132,13 +145,14 @@ class KafkaProducer:
         try:
             current_timestamp = datetime.now(tz=self.local_tz)
 
-            payload = ""
+            payload = None
             if isinstance(msg, list) or isinstance(msg, dict) :
                 msg['timestamp'] = current_timestamp.isoformat("T", "seconds")
                 jsonData = dumps(msg)
                 payload = jsonData.encode()
             else:
                 payload = bytearray(msg, "utf-8")
+                # payload = msg
 
             if payload:
                 _LOGGER.info("Producing message: [%s] on broker: [%s:%d] and topic: [%s]", payload, self.host, self.port, self.topic)
