@@ -45,40 +45,56 @@ class KafkaConsumer:
                     _LOGGER.debug("Initializing Kafka consumer with ssl+sasl security profile")
                     self.consumer = AIOKafkaConsumer(
                         self.topic,
-                        bootstrap_servers   = f"{self.host}:{self.port}",
-                        group_id            = self.consumerGroup,
-                        security_protocol   = "SSL",
-                        ssl_context         = self.sslContext,
-                        sasl_mechanism      = self.saslContext["mechanism"],
-                        sasl_plain_username = self.saslContext["plain_username"],
-                        sasl_plain_password = self.saslContext["plain_password"],
+                        bootstrap_servers       = f"{self.host}:{self.port}",
+                        group_id                = self.consumerGroup,
+                        security_protocol       = "SSL",
+                        ssl_context             = self.sslContext,
+                        sasl_mechanism          = self.saslContext["mechanism"],
+                        sasl_plain_username     = self.saslContext["plain_username"],
+                        sasl_plain_password     = self.saslContext["plain_password"],
+                        session_timeout_ms      = 60000,
+                        heartbeat_interval_ms   = 25000,
+                        fetch_max_wait_ms       = 10000,
+                        auto_commit_interval_ms = 10000
                     )
                 elif "ssl" == self.security:
                     _LOGGER.debug("Initializing Kafka consumer with ssl security profile")
                     self.consumer = AIOKafkaConsumer(
                         self.topic,
-                        bootstrap_servers   = f"{self.host}:{self.port}",
-                        group_id            = self.consumerGroup,
-                        ssl_context         = self.sslContext,
-                        security_protocol   = "SSL",
+                        bootstrap_servers       = f"{self.host}:{self.port}",
+                        group_id                = self.consumerGroup,
+                        ssl_context             = self.sslContext,
+                        security_protocol       = "SSL",
+                        session_timeout_ms      = 60000,
+                        heartbeat_interval_ms   = 25000,
+                        fetch_max_wait_ms       = 10000,
+                        auto_commit_interval_ms = 10000
                     )
                 elif "sasl" == self.security:
                     _LOGGER.debug("Initializing Kafka consumer with SASL security profile")
                     self.producer = AIOKafkaConsumer(
-                        bootstrap_servers   = f"{self.host}:{self.port}",
-                        group_id            = self.consumerGroup,
-                        security_protocol   = "PLAINTEXT",
-                        sasl_mechanism      = self.saslContext["mechanism"],
-                        sasl_plain_username = self.saslContext["plain_username"],
-                        sasl_plain_password = self.saslContext["plain_password"]
+                        bootstrap_servers       = f"{self.host}:{self.port}",
+                        group_id                = self.consumerGroup,
+                        security_protocol       = "PLAINTEXT",
+                        sasl_mechanism          = self.saslContext["mechanism"],
+                        sasl_plain_username     = self.saslContext["plain_username"],
+                        sasl_plain_password     = self.saslContext["plain_password"],
+                        session_timeout_ms      = 60000,
+                        heartbeat_interval_ms   = 25000,
+                        fetch_max_wait_ms       = 10000,
+                        auto_commit_interval_ms =10000
                     )
             else:
                 # start a consumer without security context
                 _LOGGER.debug("Initializing Kafka consumer without security profile")
                 self.consumer = AIOKafkaConsumer(
                     self.topic,
-                    bootstrap_servers   = f"{self.host}:{self.port}",
-                    group_id            = self.consumerGroup
+                    bootstrap_servers       = f"{self.host}:{self.port}",
+                    group_id                = self.consumerGroup,
+                    session_timeout_ms      = 60000,
+                    heartbeat_interval_ms   = 25000,
+                    fetch_max_wait_ms       = 10000,
+                    auto_commit_interval_ms = 10000
                 )
 
         except Exception as e:
