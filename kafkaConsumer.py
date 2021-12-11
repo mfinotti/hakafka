@@ -148,12 +148,12 @@ class KafkaConsumer:
                     try:
                         message = json.loads(message)
                     except Exception as e:
-                        _LOGGER.war("bad json format, return a message as a string")
+                        _LOGGER.warn("bad json format msg: %s", message)
 
                     self.onMessageCallback(self.platform, message)
                 except Exception as e:
                     _LOGGER.warn("bad message: %s", msg.value.decode("utf-8"))
                     _LOGGER.error(e)
 
-        except:
-            _LOGGER.error("error given in consuming message")
+        except Exception as e:
+            _LOGGER.error("error given in consuming message, error: %s", e)

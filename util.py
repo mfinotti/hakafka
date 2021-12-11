@@ -1,18 +1,4 @@
-import logging, os
-from json import dumps, loads
-import ssl
-
-#own class import
-from .kafkaManager import (
-    buildKafkaManager
-)
-# import .kafkaManager as KafkaManager
-
-#component domain keyword
-DOMAIN = "hakafka"
-
-#logger initlialization
-_LOGGER = logging.getLogger(__name__)
+import logging, ssl, os
 
 SASL_CONFIGKEY = "sasl_context"
 SASL_MECHANINSM_CONFIGKEY = "sasl_mechanism"
@@ -27,23 +13,32 @@ SSL_PASSWORD_CONFIGKEY = "ssl_password"
 PRODUCER_CONFIGKEY = "producers"
 CONSUMER_CONFIGKEY = "consumers"
 
+#logger Configuration
+
+# we want to display only levelname and message
+#formatter = ColorFormatter("%(levelname)s %(message)s")
+formatter = "[%(asctime)s] %(name)s {%(filename)s:%(lineno)d} %(levelname)s - %(message)s"
+
+#_LOGGER = logging.getLogger(__name__)
+#_LOGGER.setLevel("DEBUG")
+logging.basicConfig(level=logging.INFO, format=formatter)
+_LOGGER = logging.getLogger()
+
+
+def getLogger():
+    return _LOGGER
+
 
 def create_sasl_config(saslConfiguration):
     return {
         "mechanism"         : saslConfiguration[SASL_MECHANINSM_CONFIGKEY],
         "plain_username"    : saslConfiguration[SASL_PLAINUSERNAME_CONFIGKEY],
         "plain_password"    : saslConfiguration[SASL_PLAINPASSWORD_CONFIGKEY]
-    }
+}
 
-async def async_setup(hass, config):
-    """Loading HA-kafka module"""
-    conf = config[DOMAIN]
-    _LOGGER.debug("HA_Kafka configuration loaded: %s", conf)
+def buildAndReturnSASLConfiguration(conf):
 
-    sslContext = None
     saslContext = None
-    producersBucket = []
-    consumersBucket = []
 
     #### SASL CONFIGURATION
     if SASL_CONFIGKEY in conf:
@@ -52,7 +47,12 @@ async def async_setup(hass, config):
         _LOGGER.debug("SASL Kafka configuration: %s", saslConfiguration)
         saslContext = create_sasl_config(saslConfiguration)
         _LOGGER.debug("SASL configuration params: %s", saslContext)
+        
+    return saslContext
 
+def buildAndReturnSSLConfiguration(conf):
+
+    sslContext = None
 
     #### SSL CONFIGURATION
     if SSL_CONFIGKEY in  conf:
@@ -88,10 +88,13 @@ async def async_setup(hass, config):
         except Exception as e:
             _LOGGER.error("ERROR CREATING SECURE CONTEXT!")
             _LOGGER.error(e)
-            return False
+        
+        return sslContext
 
 
+def buildProducers(conf):
     #### PRODUCER CONFIGURATION
+    producersBucket = []
     producerConfiguration = [{
         "host"          : record['host'],
         "port"          : record['port'],
@@ -101,7 +104,11 @@ async def async_setup(hass, config):
         producersBucket = list(producerConfiguration)
         _LOGGER.debug("producers configuration: %s", producersBucket)
 
+    return producersBucket
+
+def buildConsumers(conf):
     #### CONSUMER CONFIGURATION
+    consumersBucket = []
     consumerConfiguration = [{
         "host"          : record2['host'],
         "port"          : record2['port'],
@@ -111,9 +118,10 @@ async def async_setup(hass, config):
     if None != consumerConfiguration:
         consumersBucket = list(consumerConfiguration)
         _LOGGER.debug("consumers configuration: %s", consumersBucket)
+    
+    return consumersBucket
 
-    buildKafkaManager(hass, consumersBucket, producersBucket, sslContext, saslContext)
-    _LOGGER.info("HA-Kafka configuration complete")
 
 
-    return True
+class Event():
+    data = dict()

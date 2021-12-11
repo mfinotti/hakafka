@@ -1,5 +1,4 @@
 import logging
-import json
 
 #logger initlialization
 _LOGGER = logging.getLogger(__name__)
@@ -44,7 +43,13 @@ def buildKafkaManager(
         consumersConfigurationList,
         producersConfigurationList,
         sslContext = None,
-        saslContext = None
+        saslContext = None,
+        producerStartFunction = None,
+        producerStopFunction = None,
+        producerCallbackFunction = None,
+        consumerStartFunction = None,
+        consumerStopFunction = None, 
+        consumerMessageCallbackFunction = None
     ):
         """ Ha-Kafka Manager """
         if None == producersConfigurationList or len(producersConfigurationList) > 0 :
@@ -52,9 +57,9 @@ def buildKafkaManager(
             for configuration in producersConfigurationList:
 
                 # injecting producer events
-                KafkaProducer.eventStartFn  = producerStartFn
-                KafkaProducer.eventStopFn   = producerStopFn
-                KafkaProducer.eventProduceFn= producingEventFn
+                KafkaProducer.eventStartFn  = producerStartFunction if None != producerStartFunction else producerStartFn
+                KafkaProducer.eventStopFn   = producerStopFunction if None != producerStopFunction else producerStopFn
+                KafkaProducer.eventProduceFn= producerCallbackFunction if None != producerCallbackFunction else producingEventFn
 
                 producer = KafkaProducer(
                     port                = configuration["port"],
@@ -80,8 +85,8 @@ def buildKafkaManager(
             for configuration in consumersConfigurationList :
 
                 # injecting consumer events
-                KafkaConsumer.eventStartFn      = consumerStartFn
-                KafkaConsumer.eventStopFn       = consumerStopFn
+                KafkaConsumer.eventStartFn      = consumerStartFunction if None != consumerStartFunction else consumerStartFn
+                KafkaConsumer.eventStopFn       = consumerStopFunction if None != consumerStopFunction else consumerStopFn
 
                 consumer = KafkaConsumer(
                         port                = configuration["port"],
@@ -92,7 +97,7 @@ def buildKafkaManager(
                         platform            = hass,
                         sslContext          = sslContext,
                         saslContext         = saslContext,
-                        onMessageCallback   = onConsumerMessageCallbackEvent
+                        onMessageCallback   = consumerMessageCallbackFunction if None != consumerMessageCallbackFunction else onConsumerMessageCallbackEvent
                 )
 
                 # consumer events pull up

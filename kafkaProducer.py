@@ -128,16 +128,17 @@ class KafkaProducer:
         else:
             _LOGGER.warn("Empty data! Nothing to produce..")
             return
-
+        
         if "topic" in eventData:
             if self.topic != eventData["topic"] :
-                return
+                return        
 
-        _LOGGER.debug("Producing message on broker: %s:%d topic: %s message: %s", self.host, self.port, self.topic, eventData['message'])
+        _LOGGER.info("Producing message on broker: %s:%d topic: %s message: %s", self.host, self.port, self.topic, eventData['message'])
         await self.produce(eventData["message"])
 
 
     async def produce(self, msg):
+
         if None == msg or "" == msg:
             _LOGGER.warn("Attempt to producing an empty message on broker: %s:%d topic: %s", self.host, self.port, self.topic)
             return
@@ -153,7 +154,6 @@ class KafkaProducer:
             else:
                 payload = bytearray(msg, "utf-8")
                 # payload = msg
-
             if payload:
                 _LOGGER.info("Producing message: [%s] on broker: [%s:%d] and topic: [%s]", payload, self.host, self.port, self.topic)
                 await self.producer.send_and_wait(self.topic, payload)
